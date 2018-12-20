@@ -21,7 +21,9 @@ RF24 radioControl(7, 8); // CE pin, CSN pin
 const byte pipe = 1; // assigned pipe number
 //rf24 receiver part
 
-
+//dealt with package lost 
+float pkglr; //package lost rate
+int pkgt; //package transport
 
 //data part
 byte result[8];
@@ -49,7 +51,9 @@ const int rgtBkdPos = 10;
 Servo sv1;
 int pos1;  
 Servo sv2;
-int pos2;  
+int pos2; 
+Servo sv3; 
+int pos3;  
 //
 
 void setup()   {                
@@ -65,12 +69,13 @@ void setup()   {
   Serial.println("NRF ready~");
 //  
   //motor section
-  pinMode (lftFwdPos, OUTPUT);
-  pinMode (lftBkdPos, OUTPUT);
-  pinMode (rgtFwdPos, OUTPUT);
-  pinMode (rgtBkdPos, OUTPUT);
+  pinMode (5, OUTPUT);
+  pinMode (6, OUTPUT);
+  pinMode (9, OUTPUT);
+  pinMode (10, OUTPUT);
   sv1.attach(3);
   sv2.attach(4);
+  sv3.attach(A0);
   
 }
 
@@ -79,6 +84,7 @@ void loop() {
       // send data only when you receive data:
   if (radioControl.available(&pipe)) 
   {
+    pkgt+=1; 
     radioControl.read(&result, sizeof(result));  
     for (int cnt = 0; cnt < 6; cnt++)
     {
@@ -96,13 +102,30 @@ void loop() {
         roll = result [cnt];             
     }
   }
-    //debug check    
-/*    
+  else
+  {
+    pkglr = 1/pkgt; 
+    pkgt=0; 
+    Serial.println("package lost rate: ");
+    Serial.println(pkglr);
+    //restart radio
+    radioControl.begin();
+    radioControl.setChannel(15); //setting up channel(frequency)
+    radioControl.setPALevel(RF24_PA_MIN);
+    radioControl.setDataRate(RF24_250KBPS);
+    radioControl.openReadingPipe(pipe, addr); //open up radio
+    radioControl.startListening(); //start listening
+        
+  }
+    //debug check   
+    //for servo     
     Serial.print("left mode: ");
     Serial.print(lftMode); 
     Serial.print(" right mode: ");
     Serial.print(rgtMode); 
-    //Serial.print(throttle); 
+
+    
+    //for DC motor  
     Serial.print("  Throttle: ");
     Serial.print(throttle);  
     Serial.print("  Yaw: ");
@@ -111,9 +134,9 @@ void loop() {
     Serial.print(pitch); 
     Serial.print("  Roll: ");
     Serial.print(roll);
-    Serial.print("  t.Size: ");
-    Serial.println(sizeof(result));   
- */
+/*    Serial.print("  t.Size: ");
+    Serial.print(sizeof(result)); */  
+
   /*
   output into the motor
   training the data
@@ -127,9 +150,9 @@ void loop() {
               yaw,      leftward and rightward. 
   have to adjust the rolling way by yourself, especially the formula for the input. 
   */
-  int lftNum = throttle+yaw-256 ; 
-  int rgtNum = throttle-yaw ;
-  lftNum-=4; 
+  int lftNum = (throttle+yaw-256)*sqrt(2); 
+  int rgtNum = (throttle-yaw)*sqrt(2);
+  lftNum-=5; 
   rgtNum-=2;
   if (lftNum>0)
   {
@@ -158,11 +181,11 @@ void loop() {
   Serial.print("  rgtFwd= "); 
   Serial.print(rgtFwd);
   Serial.print("  Bkd= ");       
-  Serial.println(rgtBkd);   
-  analogWrite(lftFwdPos, lftFwd); 
-  analogWrite(lftBkdPos, lftBkd); 
-  analogWrite(rgtFwdPos, rgtFwd); 
-  analogWrite(rgtBkdPos, rgtBkd); 
+  Serial.println(rgtBkd);  
+  analogWrite(5, lftFwd); 
+  analogWrite(6, lftBkd); 
+  analogWrite(9, rgtFwd); 
+  analogWrite(10, rgtBkd); 
 
 //servo stop = 90
 //servo full fwd = 180
@@ -170,7 +193,7 @@ void loop() {
 //first servo
   if (lftMode==2)
     {
-    pos1 = 180;
+    pos1 = 100;
     sv1.write(pos1);
     }
   else if (lftMode==1)
@@ -186,17 +209,28 @@ void loop() {
 //another servo          
   if (rgtMode==2)
     {
-    pos1 = 180;
-    sv1.write(pos1);
+    pos2 = 100;
+    sv2.write(pos2);
     }
   else if (rgtMode==1)
     {
-    pos1 = 0;
-    sv1.write(pos1);
+    pos2 = 0;
+    sv2.write(pos2);
     }
   else if (rgtMode==0)
     {
-    pos1 = 90;
-    sv1.write(pos1);   
+    pos2 = 90;
+    sv2.write(pos2);   
     }
+//0~360
+//roll at right throttle
+  pos3 = map(roll, 0, 255, 180, 0);
+  sv3.write(pos3);
+//test servo situation: 
+/*  Serial.print("  ");
+  Serial.print(pos1);
+  Serial.print("  ");
+  Serial.print(pos2);
+  Serial.print("  ");
+  Serial.println(pos3); */   
 }
