@@ -15,8 +15,8 @@ void loop() {
 //bounus
 // 
   analogWrite(motorLF, 0);
-  analogWrite(motorLB, 100);  
+  analogWrite(motorLB, 0);  
   analogWrite(motorRF, 0);
-  analogWrite(motorRB, 100);
+  analogWrite(motorRB, 150);
 
 }
