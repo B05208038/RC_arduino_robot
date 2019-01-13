@@ -180,14 +180,14 @@ void loop() {
     rgtBkd = 0-rgtNum;       
   }
   
-  Serial.print(" // lftFwd = "); 
+  /*Serial.print(" // lftFwd = "); 
   Serial.print(lftFwd); 
   Serial.print("  lftBkd = ");
   Serial.print(lftBkd); 
   Serial.print("  rgtFwd = "); 
   Serial.print(rgtFwd);
   Serial.print("  rgtBkd = ");       
-  Serial.println(rgtBkd); 
+  Serial.println(rgtBkd); */
   Serial.println();  
   analogWrite(lftFwd, lftFwdPos); 
   analogWrite(lftBkd, lftBkdPos); 
